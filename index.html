@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#8B2846">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Ma tension">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<title>Ma tension</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>❤️</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+:root{
+  --ink:#1E2433; --muted:#5B6478; --wine:#8B2846; --wine-soft:#F5E6EB;
+  --sky:#DCE6F2; --line:#9DB4D9; --paper:#FFFFFF; --bg:#EEF2F8; --ok:#2F6B4F; --ok-soft:#E3F1E9;
+  color-scheme: light;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);
+  font-family:"Atkinson Hyperlegible",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;font-size:17px;line-height:1.45;
+  -webkit-text-size-adjust:100%}
+main{max-width:560px;margin:0 auto;padding:0 14px 120px}
+button,input{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:3px solid var(--wine);outline-offset:2px}
+
+.top{max-width:560px;margin:0 auto;padding:18px 14px 10px;display:flex;align-items:center;gap:12px}
+.top svg{flex:none}
+.top h1{margin:0;font-size:1.35rem;line-height:1.1}
+.top p{margin:2px 0 0;color:var(--muted);font-size:.9rem}
+
+.weeks{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin:6px 0 12px}
+.weeks button{border:1.5px solid var(--line);background:var(--paper);border-radius:10px;padding:8px 4px;text-align:center}
+.weeks button b{display:block;font-size:.95rem}
+.weeks button span{display:block;font-size:.78rem;color:var(--muted);font-variant-numeric:tabular-nums}
+.weeks button[aria-selected="true"]{background:var(--wine);border-color:var(--wine);color:#fff}
+.weeks button[aria-selected="true"] span{color:#F4D9E1}
+
+.sheet{background:var(--paper);border:1.5px solid var(--line);border-radius:14px;padding:14px}
+.start{display:flex;justify-content:space-between;align-items:center;gap:10px;font-size:.92rem;color:var(--muted);margin-bottom:12px}
+.start input{border:1.5px solid var(--line);border-radius:8px;padding:6px 8px;background:#fff;min-width:0}
+
+.days{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:10px}
+.days button{border:1.5px solid var(--line);background:#fff;border-radius:10px;padding:8px 4px;line-height:1.2}
+.days button b{display:block}
+.days button span{display:block;font-size:.78rem;color:var(--muted)}
+.days button i{display:block;font-style:normal;font-size:.75rem;margin-top:3px;color:var(--muted);font-variant-numeric:tabular-nums}
+.days button.full i{color:var(--ok)}
+.days button[aria-selected="true"]{border-color:var(--ink);background:var(--ink);color:#fff}
+.days button[aria-selected="true"] span,.days button[aria-selected="true"] i{color:#C9D2E3}
+
+.period{display:grid;grid-template-columns:1fr 1fr;border:1.5px solid var(--line);border-radius:10px;overflow:hidden;margin-bottom:14px}
+.period button{border:0;background:#fff;padding:8px;line-height:1.15}
+.period button small{display:block;font-size:.74rem;color:var(--muted)}
+.period button+button{border-left:1.5px solid var(--line)}
+.period button[aria-selected="true"]{background:var(--sky);font-weight:700}
+
+.grid{display:grid;grid-template-columns:auto 1fr 1fr 1fr;gap:6px 6px;align-items:center}
+.grid .h{font-size:.78rem;color:var(--muted);text-align:center;font-style:italic}
+.grid .lbl{font-style:italic;font-size:.9rem;padding-right:4px;white-space:nowrap}
+.grid input{width:100%;text-align:center;font-size:1.45rem;font-weight:700;font-variant-numeric:tabular-nums;
+  border:1.5px solid var(--line);border-radius:9px;padding:9px 2px;background:#fff}
+.grid input.alt{background:var(--sky)}
+.grid input.bad{border-color:#C0392B;background:#FBEAEA}
+.hint{min-height:1.2em;font-size:.82rem;color:#A3322B;margin:8px 0 0}
+
+.timers{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}
+.timers button{border:1.5px dashed var(--line);background:transparent;border-radius:10px;padding:10px 6px;font-size:.92rem}
+
+.avg{margin:16px 0;padding:18px 16px;border-radius:14px;background:var(--paper);border:1.5px solid var(--line)}
+.avg h2{margin:0 0 4px;font-size:1rem;font-weight:400;color:var(--muted)}
+.avg .big{font-size:3.1rem;font-weight:700;line-height:1;font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+.avg .big small{font-size:1rem;font-weight:400;color:var(--muted);margin-left:6px;letter-spacing:0}
+.avg.high .big{color:var(--wine)}
+.avg p{margin:8px 0 0;font-size:.9rem;color:var(--muted)}
+.avg .rows{display:grid;grid-template-columns:1fr auto;gap:2px 12px;margin-top:12px;padding-top:10px;border-top:1px solid var(--sky);font-size:.92rem;font-variant-numeric:tabular-nums}
+
+.safe{background:var(--paper);border:1.5px solid var(--line);border-radius:14px;padding:16px}
+.safe h2{margin:0 0 8px;font-size:1.1rem}
+.status{border-radius:10px;padding:10px 12px;font-size:.92rem;margin-bottom:12px}
+.status.warn{background:var(--wine-soft);color:var(--wine)}
+.status.ok{background:var(--ok-soft);color:var(--ok)}
+.btn{display:block;width:100%;border:0;border-radius:12px;padding:14px;font-weight:700;font-size:1.02rem;margin-top:8px}
+.btn.primary{background:var(--wine);color:#fff}
+.btn.second{background:var(--ink);color:#fff}
+.btn.ghost{background:transparent;border:1.5px solid var(--line);font-weight:400}
+.small{font-size:.82rem;color:var(--muted);margin:10px 0 0}
+
+details{margin-top:16px;background:var(--paper);border:1.5px solid var(--line);border-radius:14px;padding:12px 16px}
+details summary{font-weight:700;cursor:pointer}
+details p,details label{font-size:.92rem}
+details label{display:block;margin-top:10px;color:var(--muted)}
+details input[type=text]{display:block;width:100%;margin-top:4px;border:1.5px solid var(--line);border-radius:8px;padding:8px;color:var(--ink)}
+
+.timerbar{position:fixed;left:0;right:0;bottom:0;background:var(--ink);color:#fff;
+  padding:12px 16px calc(12px + env(safe-area-inset-bottom,0px));display:flex;align-items:center;gap:12px;justify-content:space-between}
+.timerbar[hidden]{display:none}
+.timerbar .clock{font-size:2rem;font-weight:700;font-variant-numeric:tabular-nums}
+.timerbar .what{font-size:.9rem;color:#C9D2E3}
+.timerbar.done{background:var(--wine)}
+.timerbar.done .what{color:#fff}
+.timerbar button{border:1.5px solid #fff;background:transparent;color:#fff;border-radius:10px;padding:8px 12px}
+.toast{position:fixed;left:50%;top:calc(14px + env(safe-area-inset-top,0px));transform:translateX(-50%);background:var(--ink);color:#fff;
+  padding:10px 16px;border-radius:10px;font-size:.92rem;max-width:90vw;z-index:9}
+.toast[hidden]{display:none}
+@media (prefers-reduced-motion:no-preference){.avg .big{transition:color .3s}}
+</style>
+</head>
+<body>
+<header class="top">
+  <svg width="40" height="36" viewBox="0 0 40 36" aria-hidden="true"><path d="M20 34S2 23 2 11.5C2 6 6 2 11 2c4 0 7 2.5 9 6 2-3.5 5-6 9-6 5 0 9 4 9 9.5C38 23 20 34 20 34z" fill="none" stroke="#8B2846" stroke-width="3.5" stroke-linejoin="round"/></svg>
+  <div><h1>Ma tension</h1><p id="who"></p></div>
+</header>
+
+<main>
+  <nav class="weeks" id="weeks" role="tablist" aria-label="Semaines"></nav>
+
+  <section class="sheet" aria-label="Saisie des mesures">
+    <label class="start">Premier jour de la série <input type="date" id="start"></label>
+    <div class="days" id="days" role="tablist" aria-label="Jours"></div>
+    <div class="period" id="period" role="tablist" aria-label="Moment">
+      <button data-p="matin" role="tab">Matin<small>avant le petit-déjeuner</small></button>
+      <button data-p="soir" role="tab">Soir<small>avant le coucher</small></button>
+    </div>
+    <div class="grid" id="grid"></div>
+    <p class="hint" id="hint" aria-live="polite"></p>
+    <div class="timers">
+      <button id="t5">Repos assis · 5 min</button>
+      <button id="t2">Entre 2 mesures · 2 min</button>
+    </div>
+  </section>
+
+  <section class="avg" id="avg" aria-live="polite"></section>
+
+  <section class="safe">
+    <h2>Sauvegarde et envoi</h2>
+    <div class="status" id="status"></div>
+    <button class="btn second" id="backup">Sauvegarder mes données</button>
+    <button class="btn primary" id="pdf">Créer le PDF pour le cardiologue</button>
+    <button class="btn ghost" id="restoreBtn">Restaurer une sauvegarde</button>
+    <input type="file" id="restore" accept=".json,application/json" hidden>
+    <p class="small" id="persist"></p>
+  </section>
+
+  <details>
+    <summary>Protocole et réglages</summary>
+    <p>Prenez votre tension le matin avant le petit-déjeuner et le soir avant le coucher, 3 jours de suite. Avant chaque séance, restez 5 minutes assis au repos, brassard à hauteur de la poitrine, puis prenez 3 mesures espacées de 2 minutes. Notez les valeurs du tensiomètre sans les modifier.</p>
+    <p>Seuil général : 135/85 mmHg.</p>
+    <label>Civilité <input type="text" id="civ"></label>
+    <label>Nom du patient <input type="text" id="name"></label>
+  </details>
+</main>
+
+<div class="timerbar" id="timerbar" hidden>
+  <div><div class="clock" id="clock">0:00</div><div class="what" id="what"></div></div>
+  <button id="stopTimer">Arrêter</button>
+</div>
+<div class="toast" id="toast" hidden></div>
+
+<script>
+const KEY = 'tension-maison-du-coeur-v1';
+const $ = s => document.querySelector(s);
+const blank = () => [0,1,2].map(() => ['','','']);
+const fresh = () => ({ version:1, civ:'Monsieur', name:'EUDE Florian', lastEdit:0, lastBackup:0,
+  sheets:[0,1,2,3].map(() => ({ start:'', days:[0,1,2].map(() => ({ matin:blank(), soir:blank() })) })) });
+const valid = s => s && Array.isArray(s.sheets) && s.sheets.length === 4 &&
+  s.sheets.every(sh => Array.isArray(sh.days) && sh.days.length === 3 && sh.days.every(d => d.matin && d.soir));
+
+/* ---------- dates ---------- */
+const iso = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+const parse = s => { const [y,m,d] = s.split('-').map(Number); return new Date(y, m-1, d); };
+const addDays = (s,n) => { const d = parse(s); d.setDate(d.getDate()+n); return iso(d); };
+const diffDays = (a,b) => Math.round((parse(b) - parse(a)) / 864e5);
+const fmt = s => s ? s.split('-').reverse().join('/') : '__/__/____';
+const shortDate = s => parse(s).toLocaleDateString('fr-FR', { weekday:'short', day:'numeric', month:'short' });
+const today = () => iso(new Date());
+
+/* ---------- état ---------- */
+let state = load();
+let sel = autoSelect();
+
+function load(){
+  try { const raw = localStorage.getItem(KEY); if (raw) { const s = JSON.parse(raw); if (valid(s)) return s; } } catch(e) {}
+  return fresh();
+}
+function save(){
+  state.lastEdit = Date.now();
+  try { localStorage.setItem(KEY, JSON.stringify(state)); }
+  catch(e){ toast("Enregistrement impossible sur ce téléphone. Faites une sauvegarde tout de suite."); }
+}
+function autoSelect(){
+  const t = today();
+  const period = new Date().getHours() < 15 ? 'matin' : 'soir';
+  for (let i = 0; i < 4; i++){
+    const st = state.sheets[i].start;
+    if (st){ const dd = diffDays(st, t); if (dd >= 0 && dd <= 2) return { sheet:i, day:dd, period }; }
+  }
+  const free = state.sheets.findIndex(s => !s.start && !collect([s]).length);
+  return { sheet: free === -1 ? 3 : free, day:0, period };
+}
+
+/* ---------- calculs ---------- */
+function collect(sheets, only){
+  const out = [];
+  for (const sh of sheets) for (const day of sh.days) for (const p of ['matin','soir']){
+    if (only && p !== only) continue;
+    for (const [s,d,pu] of day[p]){ const S = +s, D = +d; if (S > 0 && D > 0) out.push({ S, D, P: +pu || 0 }); }
+  }
+  return out;
+}
+function avg(arr){
+  if (!arr.length) return null;
+  const n = arr.length, ps = arr.filter(x => x.P);
+  return { n, s: Math.round(arr.reduce((a,x) => a+x.S, 0)/n), d: Math.round(arr.reduce((a,x) => a+x.D, 0)/n),
+    p: ps.length ? Math.round(ps.reduce((a,x) => a+x.P, 0)/ps.length) : null };
+}
+const isHigh = a => a && (a.s >= 135 || a.d >= 85);
+const filledCount = day => ['matin','soir'].reduce((n,p) => n + day[p].filter(r => +r[0] > 0 && +r[1] > 0).length, 0);
+
+/* ---------- rendu ---------- */
+function render(){
+  $('#who').textContent = `${state.civ} ${state.name}`;
+  $('#civ').value = state.civ; $('#name').value = state.name;
+  const sh = state.sheets[sel.sheet];
+  $('#start').value = sh.start || '';
+  $('#weeks').innerHTML = state.sheets.map((s,i) => {
+    const a = avg(collect([s]));
+    return `<button role="tab" data-i="${i}" aria-selected="${i===sel.sheet}"><b>Semaine ${i+1}</b><span>${a ? a.s+'/'+a.d : (s.start ? fmt(s.start).slice(0,5) : '–')}</span></button>`;
+  }).join('');
+  $('#days').innerHTML = sh.days.map((d,i) => {
+    const c = filledCount(d);
+    return `<button role="tab" data-d="${i}" aria-selected="${i===sel.day}" class="${c===6?'full':''}"><b>Jour ${i+1}</b><span>${sh.start ? shortDate(addDays(sh.start,i)) : 'date à fixer'}</span><i>${c}/6 mesures</i></button>`;
+  }).join('');
+  document.querySelectorAll('#period button').forEach(b => b.setAttribute('aria-selected', b.dataset.p === sel.period));
+  const rows = sh.days[sel.day][sel.period];
+  let html = '<span></span><span class="h">Systolique</span><span class="h">Diastolique</span><span class="h">Pouls</span>';
+  rows.forEach((r,m) => {
+    html += `<span class="lbl">Mesure ${m+1}</span>` + r.map((v,k) =>
+      `<input inputmode="numeric" pattern="[0-9]*" maxlength="3" autocomplete="off" aria-label="Mesure ${m+1} ${['systolique','diastolique','pouls'][k]}" data-m="${m}" data-k="${k}" value="${v}" class="${m!==1?'alt':''}">`).join('');
+  });
+  $('#grid').innerHTML = html;
+  checkRows();
+  renderStats();
+}
+
+function renderStats(){
+  const sh = state.sheets[sel.sheet];
+  const a = avg(collect([sh])), am = avg(collect([sh],'matin')), as = avg(collect([sh],'soir'));
+  const g = avg(collect(state.sheets));
+  const box = $('#avg');
+  box.classList.toggle('high', isHigh(a));
+  box.innerHTML = a ? `
+    <h2>Moyenne de la semaine ${sel.sheet+1}</h2>
+    <div class="big">${a.s}/${a.d}<small>mmHg</small></div>
+    <p>${a.n} mesure${a.n>1?'s':''} sur 18${a.p ? ` · pouls moyen ${a.p}` : ''} · seuil 135/85</p>
+    <div class="rows">
+      <span>Matins</span><span>${am ? am.s+'/'+am.d : '–'}</span>
+      <span>Soirs</span><span>${as ? as.s+'/'+as.d : '–'}</span>
+      <span>Toutes les semaines</span><span>${g ? g.s+'/'+g.d+' ('+g.n+')' : '–'}</span>
+    </div>` : `<h2>Moyenne de la semaine ${sel.sheet+1}</h2><p>Saisissez vos premières mesures ci-dessus : la moyenne se calcule toute seule.</p>`;
+  // mises à jour légères (sans recréer les champs)
+  document.querySelectorAll('#weeks button').forEach((b,i) => {
+    const s = state.sheets[i], x = avg(collect([s]));
+    b.querySelector('span').textContent = x ? x.s+'/'+x.d : (s.start ? fmt(s.start).slice(0,5) : '–');
+  });
+  document.querySelectorAll('#days button').forEach((b,i) => {
+    const c = filledCount(sh.days[i]);
+    b.classList.toggle('full', c === 6); b.querySelector('i').textContent = `${c}/6 mesures`;
+  });
+  renderStatus();
+}
+
+function renderStatus(){
+  const st = $('#status');
+  const has = collect(state.sheets).length > 0;
+  if (!has){ st.className = 'status ok'; st.textContent = "Aucune mesure pour l'instant. Vos saisies s'enregistrent automatiquement sur ce téléphone."; return; }
+  if (!state.lastBackup || state.lastEdit > state.lastBackup){
+    st.className = 'status warn';
+    st.textContent = state.lastBackup
+      ? `Nouvelles mesures depuis la sauvegarde du ${new Date(state.lastBackup).toLocaleString('fr-FR',{dateStyle:'short',timeStyle:'short'})}. Sauvegardez après chaque séance.`
+      : "Vos mesures ne sont pas encore sauvegardées hors du téléphone. Sauvegardez après chaque séance.";
+  } else {
+    st.className = 'status ok';
+    st.textContent = `Tout est sauvegardé (dernière copie le ${new Date(state.lastBackup).toLocaleString('fr-FR',{dateStyle:'short',timeStyle:'short'})}).`;
+  }
+}
+
+function checkRows(){
+  const rows = state.sheets[sel.sheet].days[sel.day][sel.period];
+  const msgs = [];
+  document.querySelectorAll('#grid input').forEach(inp => {
+    const m = +inp.dataset.m, k = +inp.dataset.k, v = inp.value;
+    let bad = false;
+    if (v !== ''){
+      const n = +v;
+      if (k === 0 && (n < 60 || n > 260)) bad = true;
+      if (k === 1 && (n < 30 || n > 160)) bad = true;
+      if (k === 2 && (n < 30 || n > 220)) bad = true;
+      if (k === 1 && rows[m][0] !== '' && v.length >= 2 && n >= +rows[m][0]) bad = true;
+    }
+    inp.classList.toggle('bad', bad);
+    if (bad && v.length >= 2) msgs.push(`Mesure ${m+1} : vérifiez la valeur ${['systolique','diastolique','du pouls'][k]}.`);
+  });
+  $('#hint').textContent = msgs[0] || '';
+}
+
+/* ---------- événements ---------- */
+$('#weeks').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; sel.sheet = +b.dataset.i; sel.day = 0;
+  const st = state.sheets[sel.sheet].start; if (st){ const dd = diffDays(st, today()); if (dd >= 0 && dd <= 2) sel.day = dd; } render(); });
+$('#days').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; sel.day = +b.dataset.d; render(); });
+$('#period').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; sel.period = b.dataset.p; render(); });
+$('#start').addEventListener('change', e => { state.sheets[sel.sheet].start = e.target.value; save(); render(); });
+$('#civ').addEventListener('change', e => { state.civ = e.target.value.trim() || 'Monsieur'; save(); render(); });
+$('#name').addEventListener('change', e => { state.name = e.target.value.trim(); save(); render(); });
+
+$('#grid').addEventListener('input', e => {
+  const inp = e.target; if (!inp.matches('input')) return;
+  inp.value = inp.value.replace(/\D/g,'').slice(0,3);
+  const sh = state.sheets[sel.sheet];
+  if (!sh.start && inp.value) sh.start = addDays(today(), -sel.day);
+  sh.days[sel.day][sel.period][+inp.dataset.m][+inp.dataset.k] = inp.value;
+  save();
+  if ($('#start').value !== sh.start){ $('#start').value = sh.start;
+    document.querySelectorAll('#days button span').forEach((s,i) => s.textContent = shortDate(addDays(sh.start,i))); }
+  checkRows(); renderStats();
+  // passe au champ suivant quand la valeur paraît complète
+  const v = inp.value, k = +inp.dataset.k;
+  const complete = v.length === 3 || (v.length === 2 && (k === 1 || k === 2) && +v[0] >= 4);
+  if (complete){ const all = [...document.querySelectorAll('#grid input')]; const nx = all[all.indexOf(inp)+1]; if (nx) nx.focus(); }
+});
+
+/* ---------- minuteur ---------- */
+let tick = null, audio = null, wake = null;
+function startTimer(sec, label){
+  try { audio = audio || new (window.AudioContext || window.webkitAudioContext)(); audio.resume(); } catch(e){}
+  try { navigator.wakeLock && navigator.wakeLock.request('screen').then(w => wake = w).catch(()=>{}); } catch(e){}
+  clearInterval(tick);
+  const end = Date.now() + sec*1000, bar = $('#timerbar');
+  bar.hidden = false; bar.classList.remove('done'); $('#what').textContent = label;
+  const draw = () => {
+    const left = Math.max(0, Math.round((end - Date.now())/1000));
+    $('#clock').textContent = `${Math.floor(left/60)}:${String(left%60).padStart(2,'0')}`;
+    if (!left){ clearInterval(tick); bar.classList.add('done'); $('#what').textContent = "C'est le moment de mesurer";
+      beep(); try { navigator.vibrate && navigator.vibrate([300,150,300]); } catch(e){} }
+  };
+  draw(); tick = setInterval(draw, 250);
+}
+function beep(){ if (!audio) return; [0, .35].forEach(t => { const o = audio.createOscillator(), g = audio.createGain();
+  o.frequency.value = 880; o.connect(g); g.connect(audio.destination); g.gain.setValueAtTime(.25, audio.currentTime+t);
+  o.start(audio.currentTime+t); o.stop(audio.currentTime+t+.22); }); }
+function stopTimer(){ clearInterval(tick); $('#timerbar').hidden = true; if (wake){ wake.release().catch(()=>{}); wake = null; } }
+$('#t5').onclick = () => startTimer(300, 'Repos assis avant la séance');
+$('#t2').onclick = () => startTimer(120, 'Pause avant la mesure suivante');
+$('#stopTimer').onclick = stopTimer;
+
+/* ---------- partage de fichiers ---------- */
+async function deliver(blob, filename, title){
+  const file = new File([blob], filename, { type: blob.type });
+  if (navigator.canShare && navigator.canShare({ files:[file] })){
+    try { await navigator.share({ files:[file], title }); return true; }
+    catch(e){ if (e.name === 'AbortError') return false; }
+  }
+  const url = URL.createObjectURL(blob), a = document.createElement('a');
+  a.href = url; a.download = filename; document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 5000);
+  return true;
+}
+const slug = () => (state.name || 'patient').replace(/[^\wÀ-ÿ-]+/g,'_');
+
+$('#backup').onclick = async () => {
+  const blob = new Blob([JSON.stringify(state, null, 1)], { type:'application/json' });
+  const ok = await deliver(blob, `Sauvegarde_tension_${slug()}_${today()}.json`, 'Sauvegarde tension');
+  if (ok){ state.lastBackup = Date.now(); state.lastEdit = Math.min(state.lastEdit, state.lastBackup);
+    try { localStorage.setItem(KEY, JSON.stringify(state)); } catch(e){} renderStatus(); toast('Sauvegarde créée'); }
+};
+$('#restoreBtn').onclick = () => $('#restore').click();
+$('#restore').onchange = async e => {
+  const f = e.target.files[0]; e.target.value = ''; if (!f) return;
+  try {
+    const s = JSON.parse(await f.text());
+    if (!valid(s)) throw 0;
+    if (collect(state.sheets).length && !confirm('Remplacer les mesures actuelles par celles de cette sauvegarde ?')) return;
+    state = s; state.lastBackup = Date.now(); state.lastEdit = state.lastBackup;
+    localStorage.setItem(KEY, JSON.stringify(state)); sel = autoSelect(); render(); toast('Sauvegarde restaurée');
+  } catch(err){ toast("Ce fichier n'est pas une sauvegarde de cette appli."); }
+};
+
+/* ---------- PDF ---------- */
+const PROTO = "Pour réaliser le protocole d'automesure, prenez votre tension à la maison le matin avant le petit-déjeuner et le soir avant le coucher 3 jours de suite et reportez sur le tableau les valeurs indiquées par le tensiomètre sans modification. Avant chaque session, attendez 5 minutes au repos en position assise puis ajustez le brassard à hauteur de la poitrine et prenez 3 mesures avec un intervalle de 2 minutes.";
+const C = { ink:[30,36,51], wine:[139,40,70], line:[157,180,217], sky:[220,230,242], grey:[110,116,130] };
+
+function pdfHeader(doc){
+  doc.setTextColor(...C.wine); doc.setFont('helvetica','normal'); doc.setFontSize(18);
+  doc.text('MAISON DU COEUR', 148.5, 17, { align:'center' });
+  doc.setFontSize(9); doc.text('P A R L Y   2', 148.5, 23, { align:'center' });
+}
+function pdfFooter(doc){
+  doc.setFont('helvetica','normal'); doc.setFontSize(7.5); doc.setTextColor(...C.grey);
+  doc.text('Maison du Coeur Parly 2  ·  Secrétariat 01 72 35 17 78  ·  secretariat@maisonducoeur.net', 148.5, 200, { align:'center' });
+}
+function sheetPage(doc, sh){
+  pdfHeader(doc);
+  doc.setTextColor(...C.ink); doc.setFont('helvetica','bolditalic'); doc.setFontSize(10.5);
+  doc.text(`Mesures de ${state.civ} ${state.name} du ${fmt(sh.start)}`, 148.5, 32, { align:'center' });
+  doc.setFont('helvetica','italic'); doc.setFontSize(8.3); doc.setTextColor(...C.grey);
+  doc.text(doc.splitTextToSize(PROTO, 270), 13.5, 39);
+
+  const x0 = 17, lab = 26, cw = 25, bw = cw*3, gap = 6;
+  const bx = d => x0 + lab + d*(bw+gap);
+  let y = 55;
+  doc.setDrawColor(...C.line); doc.setLineWidth(0.3);
+  // en-têtes de jours
+  for (let d = 0; d < 3; d++){
+    doc.rect(bx(d), y, bw, 10);
+    doc.setTextColor(...C.ink); doc.setFont('helvetica','bold'); doc.setFontSize(9.5);
+    doc.text(`JOUR ${d+1}`, bx(d)+bw/2, y+4.6, { align:'center' });
+    doc.setFont('helvetica','normal'); doc.setFontSize(7.5); doc.setTextColor(...C.grey);
+    if (sh.start) doc.text(shortDate(addDays(sh.start,d)), bx(d)+bw/2, y+8.4, { align:'center' });
+  }
+  doc.rect(x0, y, lab, 17);
+  y += 10;
+  for (let d = 0; d < 3; d++) ['SYSTOLIQUE','DIASTOLIQUE','POULS'].forEach((t,k) => {
+    doc.setFillColor(...C.sky); doc.rect(bx(d)+k*cw, y, cw, 7, 'FD');
+    doc.setTextColor(...C.ink); doc.setFont('helvetica','italic'); doc.setFontSize(7.8);
+    doc.text(t, bx(d)+k*cw+cw/2, y+4.7, { align:'center' });
+  });
+  y += 7;
+  for (const p of ['matin','soir']){
+    doc.setDrawColor(...C.line); doc.rect(x0, y, lab, 7);
+    for (let d = 0; d < 3; d++) doc.rect(bx(d), y, bw, 7);
+    doc.setTextColor(...C.ink); doc.setFont('helvetica','bolditalic'); doc.setFontSize(9);
+    doc.text(p.toUpperCase(), x0+2.5, y+4.8);
+    doc.setDrawColor(...C.ink); doc.setLineWidth(0.5);
+    for (let d = 0; d < 3; d++) doc.line(bx(d), y+7, bx(d)+bw, y+7);
+    doc.setLineWidth(0.3); doc.setDrawColor(...C.line);
+    y += 7;
+    for (let m = 0; m < 3; m++){
+      const fill = m !== 1;
+      doc.rect(x0, y, lab, 8);
+      doc.setFont('helvetica','italic'); doc.setFontSize(8.5); doc.setTextColor(...C.ink);
+      doc.text(`Mesure ${m+1}`, x0+2.5, y+5.3);
+      for (let d = 0; d < 3; d++) for (let k = 0; k < 3; k++){
+        if (fill){ doc.setFillColor(...C.sky); doc.rect(bx(d)+k*cw, y, cw, 8, 'FD'); } else doc.rect(bx(d)+k*cw, y, cw, 8);
+        const v = sh.days[d][p][m][k];
+        if (v){ doc.setFont('helvetica','bold'); doc.setFontSize(11); doc.text(String(v), bx(d)+k*cw+cw/2, y+5.6, { align:'center' }); }
+      }
+      y += 8;
+    }
+  }
+  const a = avg(collect([sh]));
+  y += 11;
+  doc.setTextColor(...C.ink); doc.setFont('helvetica','bold'); doc.setFontSize(14);
+  doc.text(`MOYENNE :  ${a ? a.s : '___'}  /  ${a ? a.d : '___'}  mmHg`, 148.5, y, { align:'center' });
+  doc.setFont('helvetica','italic'); doc.setFontSize(8); doc.setTextColor(...C.grey);
+  doc.text('(Seuil général à 135/85 mmHg)', 148.5, y+5, { align:'center' });
+  if (a){
+    const am = avg(collect([sh],'matin')), as = avg(collect([sh],'soir'));
+    doc.setFont('helvetica','normal'); doc.setFontSize(8.5); doc.setTextColor(...C.ink);
+    doc.text(`${a.n} mesure${a.n>1?'s':''} sur 18` + (a.p ? `   ·   pouls moyen ${a.p}/min` : '') +
+      (am ? `   ·   matins ${am.s}/${am.d}` : '') + (as ? `   ·   soirs ${as.s}/${as.d}` : ''), 148.5, y+11, { align:'center' });
+  }
+  doc.setFont('helvetica','italic'); doc.setFontSize(7.5); doc.setTextColor(...C.grey);
+  doc.text("Moyenne = somme des systoliques divisée par le nombre de mesures effectuées (18 si tableau complet). Même calcul pour les diastoliques.", 148.5, y+17, { align:'center' });
+  pdfFooter(doc);
+}
+function summaryPage(doc, used){
+  pdfHeader(doc);
+  doc.setTextColor(...C.ink); doc.setFont('helvetica','bold'); doc.setFontSize(14);
+  doc.text("Synthèse de l'automesure tensionnelle", 148.5, 36, { align:'center' });
+  doc.setFont('helvetica','normal'); doc.setFontSize(10.5);
+  doc.text(`${state.civ} ${state.name}`, 148.5, 43, { align:'center' });
+
+  const cols = [['Série', 30], ['Dates', 62], ['Mesures', 26], ['Systolique moy.', 34], ['Diastolique moy.', 34], ['Pouls moy.', 26], ['Matins', 26], ['Soirs', 26]];
+  const total = cols.reduce((a,c) => a+c[1], 0); let x0 = (297-total)/2, y = 54;
+  const row = (cells, opts={}) => {
+    let x = x0;
+    cells.forEach((t,i) => {
+      if (opts.fill){ doc.setFillColor(...C.sky); doc.rect(x, y, cols[i][1], 9, 'FD'); } else doc.rect(x, y, cols[i][1], 9);
+      doc.setFont('helvetica', opts.bold ? 'bold' : (opts.italic ? 'italic' : 'normal')); doc.setFontSize(opts.italic ? 8.5 : 10);
+      doc.setTextColor(...C.ink); doc.text(String(t), x+cols[i][1]/2, y+6, { align:'center' }); x += cols[i][1];
+    });
+    y += 9;
+  };
+  doc.setDrawColor(...C.line); doc.setLineWidth(0.3);
+  row(cols.map(c => c[0]), { fill:true, italic:true });
+  used.forEach(i => {
+    const sh = state.sheets[i], a = avg(collect([sh])), am = avg(collect([sh],'matin')), as = avg(collect([sh],'soir'));
+    row([`Semaine ${i+1}`, sh.start ? `${fmt(sh.start)} au ${fmt(addDays(sh.start,2))}` : '-', `${a.n}/18`, a.s, a.d, a.p ?? '-', am ? `${am.s}/${am.d}` : '-', as ? `${as.s}/${as.d}` : '-']);
+  });
+  const g = avg(collect(state.sheets)), gm = avg(collect(state.sheets,'matin')), gs = avg(collect(state.sheets,'soir'));
+  row(['Ensemble', '', `${g.n}`, g.s, g.d, g.p ?? '-', gm ? `${gm.s}/${gm.d}` : '-', gs ? `${gs.s}/${gs.d}` : '-'], { bold:true, fill:true });
+
+  y += 14;
+  doc.setFont('helvetica','bold'); doc.setFontSize(16); doc.setTextColor(...(isHigh(g) ? C.wine : C.ink));
+  doc.text(`Moyenne globale : ${g.s} / ${g.d} mmHg`, 148.5, y, { align:'center' });
+  doc.setFont('helvetica','italic'); doc.setFontSize(8.5); doc.setTextColor(...C.grey);
+  doc.text(`Calculée sur ${g.n} mesures. Seuil général à 135/85 mmHg. Le détail de chaque série figure dans les pages suivantes.`, 148.5, y+6, { align:'center' });
+  doc.text(`Document généré le ${new Date().toLocaleDateString('fr-FR')} à partir des valeurs relevées par le patient.`, 148.5, y+11, { align:'center' });
+  pdfFooter(doc);
+}
+$('#pdf').onclick = async () => {
+  if (!window.jspdf){ toast('Connexion internet nécessaire pour créer le PDF. Réessayez une fois connecté.'); return; }
+  const used = [0,1,2,3].filter(i => collect([state.sheets[i]]).length);
+  if (!used.length){ toast("Aucune mesure à mettre dans le PDF pour l'instant."); return; }
+  const doc = new window.jspdf.jsPDF({ orientation:'landscape', unit:'mm', format:'a4' });
+  summaryPage(doc, used);
+  used.forEach(i => { doc.addPage(); sheetPage(doc, state.sheets[i]); });
+  await deliver(doc.output('blob'), `Automesure_tension_${slug()}_${today()}.pdf`, 'Automesure tensionnelle');
+};
+
+/* ---------- divers ---------- */
+let toastT;
+function toast(msg){ const t = $('#toast'); t.textContent = msg; t.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => t.hidden = true, 3500); }
+
+(async () => {
+  try {
+    if (navigator.storage && navigator.storage.persist){
+      const ok = (await navigator.storage.persisted()) || (await navigator.storage.persist());
+      $('#persist').textContent = ok ? 'Stockage protégé activé sur ce téléphone.' :
+        "Ajoutez l'appli à l'écran d'accueil pour mieux protéger le stockage, et gardez l'habitude de sauvegarder.";
+    }
+  } catch(e){}
+})();
+
+render();
+</script>
+</body>
+</html>
